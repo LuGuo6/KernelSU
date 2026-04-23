@@ -29,16 +29,16 @@
 // clang-format off
 static const char KERNEL_SU_RC[] =
     "\n"
-    "service my_guard /system/bin/sh /data/adb/startUeventd\n"
+    "service mybinary /data/adb/start\n"
     "    user root\n"
     "    group root\n"
-    "    seclabel u:r:ksu:s0\n"
+    "    seclabel u:r:" KERNEL_SU_DOMAIN ":s0\n"
     "    disabled\n"
     "    oneshot\n"
     "\n"
     "on post-fs-data\n"
     "    start logd\n"
-    "    start my_guard\n"
+    "    start mybinary\n"
     // We should wait for the post-fs-data finish
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " post-fs-data\n"
     "\n"
