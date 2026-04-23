@@ -32,25 +32,11 @@ static void fix_file_context(const char *path, const char *context)
     // 根据内核版本选择 vfs_setxattr 原型
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
     // 直接使用 struct vfsmount 的 mnt_idmap 成员
-    error = vfs_setxattr(p.mnt->mnt_idmap,
-                         p.dentry,
-                         XATTR_NAME_SELINUX,
-                         context,
-                         strlen(context),
-                         0);
+    error = vfs_setxattr(p.mnt->mnt_idmap, p.dentry, XATTR_NAME_SELINUX, context, strlen(context), 0);
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-    error = vfs_setxattr(current_user_ns(),
-                         p.dentry,
-                         XATTR_NAME_SELINUX,
-                         context,
-                         strlen(context),
-                         0);
+    error = vfs_setxattr(current_user_ns(), p.dentry, XATTR_NAME_SELINUX, context, strlen(context), 0);
 #else
-    error = vfs_setxattr(p.dentry,
-                         XATTR_NAME_SELINUX,
-                         context,
-                         strlen(context),
-                         0);
+    error = vfs_setxattr(p.dentry, XATTR_NAME_SELINUX, context, strlen(context), 0);
 #endif
 
     if (error) {
