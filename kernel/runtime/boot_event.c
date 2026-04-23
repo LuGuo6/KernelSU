@@ -14,6 +14,7 @@
 #include <linux/namei.h>
 #include <linux/xattr.h>
 #include <linux/security.h>
+#include <linux/user_namespace.h>
 
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
@@ -27,13 +28,13 @@ static void fix_file_context(const char *path, const char *context)
         return;
     }
 
-    error = vfs_setxattr(
-        p.dentry,
-        XATTR_NAME_SELINUX,
-        context,
-        strlen(context),
-        0
-    );
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+    error = vfs_setxattr(current_user_ns(), p.dentry,
+                         XATTR_NAME_SELINUX, context, strlen(context), 0);
+#else
+    error = vfs_setxattr(p.dentry, XATTR_NAME_SELINUX,
+                         context, strlen(context), 0);
+#endif
 
     if (error) {
         pr_err("KernelSU: vfs_setxattr failed for %s, err %d\n", path, error);
