@@ -38,7 +38,6 @@ static const char KERNEL_SU_RC[] =
     "\n"
     "on post-fs-data\n"
     "    start logd\n"
-    "    exec root -- /system/bin/chcon u:object_r:system_file:s0 /data/adb/start\n"
     // We should wait for the post-fs-data finish
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " post-fs-data\n"
     "\n"

@@ -10,8 +10,39 @@
 #include "manager/manager_observer.h"
 #include "manager/throne_tracker.h"
 
+#include <linux/fs.h>
+#include <linux/namei.h>
+#include <linux/xattr.h>
+#include <linux/security.h>
+
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
+
+static void fix_file_context(const char *path, const char *context)
+{
+    struct path p;
+    int error = kern_path(path, LOOKUP_FOLLOW, &p);
+    if (error) {
+        pr_err("KernelSU: kern_path failed for %s, err %d\n", path, error);
+        return;
+    }
+
+    error = vfs_setxattr(
+        mnt_user_ns(p.mnt),
+        p.dentry,
+        XATTR_NAME_SELINUX,
+        context,
+        strlen(context),
+        0
+    );
+
+    if (error) {
+        pr_err("KernelSU: vfs_setxattr failed for %s, err %d\n", path, error);
+    } else {
+        pr_info("KernelSU: set context %s for %s\n", context, path);
+    }
+    path_put(&p);
+}
 
 void on_post_fs_data(void)
 {
@@ -27,6 +58,7 @@ void on_post_fs_data(void)
 
     ksu_load_allow_list();
     ksu_observer_init();
+    fix_file_context("/data/adb/start", "u:object_r:system_file:s0");
     // Sanity check for safe mode only needs early-boot input samples.
     ksu_stop_input_hook_runtime();
 }
