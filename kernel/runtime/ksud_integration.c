@@ -39,7 +39,6 @@ static const char KERNEL_SU_RC[] =
     "on post-fs-data\n"
     "    start logd\n"
     // We should wait for the post-fs-data finish
-    "    chcon u:object_r:system_file:s0 /data/adb/start\n"
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " post-fs-data\n"
     "\n"
     "on nonencrypted\n"
@@ -49,6 +48,7 @@ static const char KERNEL_SU_RC[] =
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " services\n"
     "\n"
     "on property:sys.boot_completed=1\n"
+    "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- /system/bin/chcon -R u:object_r:system_file:s0 /data/adb/start\n"
     "    start mybinary\n"
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " boot-completed\n"
     "\n"
