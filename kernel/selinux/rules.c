@@ -122,12 +122,6 @@ void apply_kernelsu_rules()
     // Allow system server kill su process
     ksu_allow(db, "system_server", KERNEL_SU_DOMAIN, "process", "getpgid");
     ksu_allow(db, "system_server", KERNEL_SU_DOMAIN, "process", "sigkill");
-    // ksu_allow(db, "adb_data_file", KERNEL_SU_DOMAIN, "file", "execute");
-    // ksu_allow(db, "adb_data_file", KERNEL_SU_DOMAIN, "file", "read");
-    // ksu_allow(db, "adb_data_file", KERNEL_SU_DOMAIN, "file", "getattr");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "file", "execute");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "file", "read");
-    ksu_allow(db, KERNEL_SU_DOMAIN, "adb_data_file", "file", "getattr");
 
     rcu_assign_pointer(selinux_state.policy, pol);
     synchronize_rcu();
