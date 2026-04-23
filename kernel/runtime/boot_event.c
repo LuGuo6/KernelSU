@@ -15,11 +15,16 @@
 #include <linux/xattr.h>
 #include <linux/version.h>
 #include <linux/security.h>
-#include <linux/mnt_idmap.h>
-#include <linux/user_namespace.h>
 
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
+
+// 根据内核版本包含正确的头文件
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+#include <linux/mnt_idmap.h>   // 提供 mnt_idmap()
+#else
+#include <linux/user_namespace.h> // 提供 current_user_ns() 或 init_user_ns
+#endif
 
 static void fix_file_context(const char *path, const char *context)
 {
@@ -30,16 +35,19 @@ static void fix_file_context(const char *path, const char *context)
         return;
     }
 
+    // 根据内核版本选择合适的 vfs_setxattr 原型
+    error = vfs_setxattr(
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
-    error = vfs_setxattr(mnt_idmap(p.mnt), p.dentry,
-                         XATTR_NAME_SELINUX, context, strlen(context), 0);
+        mnt_idmap(p.mnt),
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
-    error = vfs_setxattr(current_user_ns(), p.dentry,
-                         XATTR_NAME_SELINUX, context, strlen(context), 0);
-#else
-    error = vfs_setxattr(p.dentry, XATTR_NAME_SELINUX,
-                         context, strlen(context), 0);
+        current_user_ns(),
 #endif
+        p.dentry,
+        XATTR_NAME_SELINUX,
+        context,
+        strlen(context),
+        0
+    );
 
     if (error) {
         pr_err("KernelSU: vfs_setxattr failed for %s, err %d\n", path, error);
