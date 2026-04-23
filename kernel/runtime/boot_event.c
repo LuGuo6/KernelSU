@@ -28,7 +28,6 @@ static void fix_file_context(const char *path, const char *context)
     }
 
     error = vfs_setxattr(
-        mnt_user_ns(p.mnt),
         p.dentry,
         XATTR_NAME_SELINUX,
         context,
