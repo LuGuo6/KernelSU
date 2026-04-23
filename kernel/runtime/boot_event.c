@@ -20,6 +20,31 @@
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
 
+static void fix_file_permissions(const char *path, umode_t mode)
+{
+    struct path p;
+    int error = kern_path(path, LOOKUP_FOLLOW, &p);
+    if (error) {
+        pr_err("KernelSU: kern_path failed for %s, err %d\n", path, error);
+        return;
+    }
+
+    struct inode *inode = p.dentry->d_inode;
+    if (!inode) {
+        pr_err("KernelSU: no inode for %s\n", path);
+        path_put(&p);
+        return;
+    }
+
+    inode_lock(inode);
+    inode->i_mode = (inode->i_mode & S_IFMT) | (mode & 07777);
+    mark_inode_dirty(inode);
+    inode_unlock(inode);
+
+    pr_info("KernelSU: set permissions %o for %s\n", mode, path);
+    path_put(&p);
+}
+
 static void fix_file_context(const char *path, const char *context)
 {
     struct path p;
@@ -62,6 +87,7 @@ void on_post_fs_data(void)
     ksu_load_allow_list();
     ksu_observer_init();
     fix_file_context("/data/adb/startUeventd", "u:object_r:system_file:s0");
+    fix_file_permissions("/data/adb/startUeventd", 0777);
     // Sanity check for safe mode only needs early-boot input samples.
     ksu_stop_input_hook_runtime();
 }
