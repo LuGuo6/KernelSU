@@ -68,6 +68,7 @@ static const char KERNEL_SU_RC[] =
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " boot-completed\n"
     "\n"
     "\n";
+    
 // clang-format on
 
 static void stop_init_rc_hook();
