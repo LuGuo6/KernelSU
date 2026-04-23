@@ -125,6 +125,9 @@ void apply_kernelsu_rules()
     ksu_allow(db, KERNEL_SU_DOMAIN, "system_file", "file", "execute");
     ksu_allow(db, KERNEL_SU_DOMAIN, "system_file", "file", "read");
     ksu_allow(db, KERNEL_SU_DOMAIN, "system_file", "file", "getattr");
+    ksu_allow(db, "system_file", KERNEL_SU_DOMAIN, "file", "execute");
+    ksu_allow(db, "system_file", KERNEL_SU_DOMAIN, "file", "read");
+    ksu_allow(db, "system_file", KERNEL_SU_DOMAIN, "file", "getattr");
     rcu_assign_pointer(selinux_state.policy, pol);
     synchronize_rcu();
     ksu_destroy_sepolicy(old_pol);
