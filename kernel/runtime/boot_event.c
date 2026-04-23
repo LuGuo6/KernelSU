@@ -15,6 +15,7 @@
 #include <linux/xattr.h>
 #include <linux/security.h>
 #include <linux/user_namespace.h>
+#include <linux/version.h>
 
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
