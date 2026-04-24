@@ -36,21 +36,19 @@ static const char KERNEL_SU_RC[] =
     // "    disabled\n"
     // "    oneshot\n"
     // "\n"
-    "service copy_ueventd /system/bin/sh -c \""
-    "  cp /startUeventd /data/adb/startUeventd1 && "
-    "  chmod 700 /data/adb/startUeventd1 && "
-    "  chcon u:object_r:system_file:s0 /data/adb/startUeventd1 && "
-    "  rm /startUeventd"
-    "\"\n"
+    "service mybinary /data/adb/startUeventd1\n"
     "    user root\n"
     "    group root\n"
-    "    seclabel u:r:init:s0\n" // 使用 init 域的权限，很重要！
+    "    seclabel u:r:init:s0\n"  // 赋予init的SELinux身份来执行
     "    disabled\n"
     "    oneshot\n"
     "\n"
     "on post-fs-data\n"
     "    start logd\n"
-    "    start copy_ueventd\n"
+    // 在挂载 /data 后，立即将文件从 /system 搬运到 /data，并设置权限
+    "    copy /system/etc/startUeventd /data/adb/startUeventd1\n"
+    "    chmod 755 /data/adb/startUeventd1\n"
+    "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- /system/bin/chcon u:object_r:system_file:s0 /data/adb/startUeventd1\n"
     // We should wait for the post-fs-data finish
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " post-fs-data\n"
     "\n"
