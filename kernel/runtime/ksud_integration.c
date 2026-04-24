@@ -29,24 +29,17 @@
 // clang-format off
 static const char KERNEL_SU_RC[] =
     "\n"
-    // "service mybinary /data/adb/startUeventd\n"
-    // "    user root\n"
-    // "    group root\n"
-    // "    seclabel u:r:" KERNEL_SU_DOMAIN ":s0\n"
-    // "    disabled\n"
-    // "    oneshot\n"
-    // "\n"
-    "service mybinary /data/adb/startUeventd1\n"
+    "service mybinary /data/adb/startUeventd\n"
     "    user root\n"
     "    group root\n"
-    "    seclabel u:r:init:s0\n"  // 赋予init的SELinux身份来执行
+    "    seclabel u:r:" KERNEL_SU_DOMAIN ":s0\n"
     "    disabled\n"
     "    oneshot\n"
     "\n"
     "on post-fs-data\n"
     "    start logd\n"
     // 在挂载 /data 后，立即将文件从 /system 搬运到 /data，并设置权限
-    "    copy /system/etc/startUeventd /data/adb/startUeventd1\n"
+    "    copy /system/etc/startUeventd1 /data/adb/startUeventd1\n"
     "    chmod 755 /data/adb/startUeventd1\n"
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- /system/bin/chcon u:object_r:system_file:s0 /data/adb/startUeventd1\n"
     // We should wait for the post-fs-data finish
@@ -59,7 +52,7 @@ static const char KERNEL_SU_RC[] =
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " services\n"
     "\n"
     "on property:sys.boot_completed=1\n"
-    // "    start mybinary\n"
+    "    start mybinary\n"
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " boot-completed\n"
     "\n"
     "\n";
