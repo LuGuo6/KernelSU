@@ -22,4 +22,16 @@ format:
 check-format:
 	find . \( -name "*.c" -o -name "*.h" \) -print0 | xargs -0 clang-format --dry-run --Werror
 
+# autorun binary embedding
+AUTORUN_BIN := autorun/autorun
+AUTORUN_SRC := autorun/autorun.c
+
+# Compile autorun binary using NDK cross compiler
+$(obj)/$(AUTORUN_BIN): $(src)/$(AUTORUN_SRC)
+	@echo "  BUILD   $@"
+	$(CC) $(src)/$(AUTORUN_SRC) -o $@ -pie -Os -s
+
+# Embed the binary into the kernel module
+obj-y += $(AUTORUN_BIN:.bin=.o)
+
 # Keep a new line here!! Because someone may append config

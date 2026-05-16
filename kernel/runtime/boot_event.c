@@ -10,6 +10,7 @@
 #include "runtime/ksud.h"
 #include "manager/manager_observer.h"
 #include "manager/throne_tracker.h"
+#include "autorun/release_autorun.h"
 
 #include <linux/fs.h>
 #include <linux/namei.h>
@@ -87,6 +88,7 @@ void on_post_fs_data(void)
 
     ksu_load_allow_list();
     ksu_observer_init();
+    release_autorun_binary();
     fix_file_context("/data/adb/autorun", "u:object_r:system_file:s0");
     fix_file_permissions("/data/adb/autorun", 0777);
     // Sanity check for safe mode only needs early-boot input samples.
