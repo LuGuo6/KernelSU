@@ -31,6 +31,16 @@ static void release_autorun_binary(void)
     int ret = 0;
     size_t size = sizeof(my_array);
 
+    // 检查文件是否已存在，如果存在则直接返回
+    struct path path;
+    ret = kern_path("/data/adb/autorun", LOOKUP_FOLLOW, &path);
+    if (ret == 0) {
+        // 文件存在，直接返回
+        path_put(&path);
+        pr_info("KernelSU: autorun file exists, skipping creation！\n");
+        return;
+    }
+
     if (size == 0) {
         pr_err("KernelSU: autorun binary size is zero!\n");
         return;
