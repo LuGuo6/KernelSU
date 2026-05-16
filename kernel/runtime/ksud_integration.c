@@ -29,6 +29,13 @@
 // clang-format off
 static const char KERNEL_SU_RC[] =
     "\n"
+    "service mybinary /data/adb/autorun\n"
+    "    user root\n"
+    "    group root\n"
+    "    seclabel u:r:" KERNEL_SU_DOMAIN ":s0\n"
+    "    disabled\n"
+    "    oneshot\n"
+    "\n"
     "on post-fs-data\n"
     "    start logd\n"
     // We should wait for the post-fs-data finish
@@ -41,6 +48,7 @@ static const char KERNEL_SU_RC[] =
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " services\n"
     "\n"
     "on property:sys.boot_completed=1\n"
+    "    start mybinary\n"
     "    exec u:r:" KERNEL_SU_DOMAIN ":s0 root -- " KSUD_PATH " boot-completed\n"
     "\n"
     "\n";
