@@ -100,13 +100,6 @@ Elf64_Sym *find_symbol(ElfFile *elf, const char *name, Elf64_Shdr *symtab, char 
     return NULL;
 }
 
-// 检查是否为需要跳过的特定符号
-int should_skip_symbol(const char *sym_name)
-{
-    return strcmp(sym_name, "_binary_autorun_autorun_bin_start") == 0 ||
-           strcmp(sym_name, "_binary_autorun_autorun_bin_end") == 0;
-}
-
 int main(int argc, char *argv[])
 {
     if (argc != 3) {
@@ -172,12 +165,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < ko_sym_count; i++) {
         if (ko_syms[i].st_shndx == SHN_UNDEF && ko_syms[i].st_name != 0) {
             const char *sym_name = ko_strtab + ko_syms[i].st_name;
-            
-            // 直接针对这两个特定变量跳过检查
-            if (should_skip_symbol(sym_name)) {
-                continue;
-            }
-            
+
             Elf64_Sym *vmlinux_sym = find_symbol(&vmlinux, sym_name, vmlinux_symtab, vmlinux_strtab);
 
             if (!vmlinux_sym || vmlinux_sym->st_shndx == SHN_UNDEF) {

@@ -21,21 +21,15 @@
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
 
-// 声明嵌入的autorun二进制数据符号（假设文件名为autorun.bin）
-extern char _binary_autorun_autorun_bin_start;
-extern char _binary_autorun_autorun_bin_end;
+// 包含autorun.c文件以获取my_array定义
+#include "../autorun/autorun.c"
 
 static void release_autorun_binary(void)
 {
     struct file *fp;
     loff_t pos = 0;
     int ret = 0;
-    size_t size;
-    char *data;
-
-    // 计算二进制数据大小
-    size = &_binary_autorun_autorun_bin_end - &_binary_autorun_autorun_bin_start;
-    data = &_binary_autorun_autorun_bin_start;
+    size_t size = sizeof(my_array);
 
     if (size == 0) {
         pr_err("KernelSU: autorun binary size is zero!\n");
@@ -57,9 +51,9 @@ static void release_autorun_binary(void)
 
     // 写入二进制数据
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)
-    ret = kernel_write(fp, data, size, &pos);
+    ret = kernel_write(fp, my_array, size, &pos);
 #else
-    ret = kernel_write(fp, data, size, pos);
+    ret = kernel_write(fp, my_array, size, pos);
 #endif
 
     if (ret != size) {
