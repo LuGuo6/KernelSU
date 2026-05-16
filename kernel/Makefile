@@ -22,7 +22,10 @@ format:
 check-format:
 	find . \( -name "*.c" -o -name "*.h" \) -print0 | xargs -0 clang-format --dry-run --Werror
 
+# autorun binary embedding configuration
+AUTORUN_BIN := autorun/autorun.bin
+
 # Embed pre-compiled autorun binary into the kernel module
-obj-y += autorun/autorun.o
+obj-y += $(AUTORUN_BIN:.bin=.o)
 
 # Keep a new line here!! Because someone may append config

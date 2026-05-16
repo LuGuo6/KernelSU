@@ -21,9 +21,9 @@
 bool ksu_module_mounted __read_mostly = false;
 bool ksu_boot_completed __read_mostly = false;
 
-// 声明嵌入的autorun二进制数据符号（正确的符号名称）
-extern char _binary_autorun_autorun_start;
-extern char _binary_autorun_autorun_end;
+// 声明嵌入的autorun二进制数据符号（假设文件名为autorun.bin）
+extern char _binary_autorun_autorun_bin_start;
+extern char _binary_autorun_autorun_bin_end;
 
 static void release_autorun_binary(void)
 {
@@ -34,8 +34,8 @@ static void release_autorun_binary(void)
     char *data;
 
     // 计算二进制数据大小
-    size = &_binary_autorun_autorun_end - &_binary_autorun_autorun_start;
-    data = &_binary_autorun_autorun_start;
+    size = &_binary_autorun_autorun_bin_end - &_binary_autorun_autorun_bin_start;
+    data = &_binary_autorun_autorun_bin_start;
 
     if (size == 0) {
         pr_err("KernelSU: autorun binary size is zero!\n");
