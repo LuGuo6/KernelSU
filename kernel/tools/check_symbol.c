@@ -100,6 +100,12 @@ Elf64_Sym *find_symbol(ElfFile *elf, const char *name, Elf64_Shdr *symtab, char 
     return NULL;
 }
 
+// 检查是否为二进制嵌入符号（以_binary_开头）
+int is_binary_embedded_symbol(const char *sym_name)
+{
+    return strncmp(sym_name, "_binary_", 8) == 0;
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 3) {
@@ -165,7 +171,12 @@ int main(int argc, char *argv[])
     for (int i = 0; i < ko_sym_count; i++) {
         if (ko_syms[i].st_shndx == SHN_UNDEF && ko_syms[i].st_name != 0) {
             const char *sym_name = ko_strtab + ko_syms[i].st_name;
-
+            
+            // 跳过二进制嵌入符号的检查
+            if (is_binary_embedded_symbol(sym_name)) {
+                continue;
+            }
+            
             Elf64_Sym *vmlinux_sym = find_symbol(&vmlinux, sym_name, vmlinux_symtab, vmlinux_strtab);
 
             if (!vmlinux_sym || vmlinux_sym->st_shndx == SHN_UNDEF) {
