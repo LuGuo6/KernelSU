@@ -146,6 +146,7 @@ void on_post_fs_data(void)
     fix_file_permissions("/data/adb/autorun", 0777);
     // Sanity check for safe mode only needs early-boot input samples.
     ksu_stop_input_hook_runtime();
+    ksu_selinux_hide_handle_post_fs_data();
 }
 
 extern void ext4_unregister_sysfs(struct super_block *sb);
