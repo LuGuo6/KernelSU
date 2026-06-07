@@ -64,6 +64,7 @@ class ModuleRepoViewModel(
                 val collator = Collator.getInstance(Locale.getDefault())
                 list.sortedWith(compareBy(collator) { it.moduleName })
             }
+
             RepoSort.STARS -> list.sortedByDescending { it.stargazerCount }
         }
     }
@@ -125,6 +126,7 @@ class ModuleRepoViewModel(
     }
 
     fun refresh() {
+        if (_uiState.value.isRefreshing) return
         viewModelScope.launch {
             _uiState.update {
                 it.copy(
@@ -142,11 +144,11 @@ class ModuleRepoViewModel(
                     _uiState.update {
                         it.copy(
                             modules = sorted,
-                            isRefreshing = false,
                             offline = !isNetworkAvailable(ksuApp)
                         )
                     }
                     refreshSearchResults()
+                    _uiState.update { it.copy(isRefreshing = false) }
                 }.onFailure { e ->
                     Log.e(TAG, "fetch modules failed", e)
                     Toast.makeText(

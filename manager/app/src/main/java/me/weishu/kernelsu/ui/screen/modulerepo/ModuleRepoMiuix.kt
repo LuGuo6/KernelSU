@@ -45,13 +45,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -75,10 +74,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import me.weishu.kernelsu.R
 import me.weishu.kernelsu.ui.component.ListPopupDefaults
+import me.weishu.kernelsu.ui.component.ScrollToTopOnChange
 import me.weishu.kernelsu.ui.component.SearchStatus
 import me.weishu.kernelsu.ui.component.dialog.ConfirmDialogHandle
 import me.weishu.kernelsu.ui.component.dialog.rememberConfirmDialog
@@ -86,6 +85,7 @@ import me.weishu.kernelsu.ui.component.markdown.GithubMarkdown
 import me.weishu.kernelsu.ui.component.miuix.SearchBarFake
 import me.weishu.kernelsu.ui.component.miuix.SearchBox
 import me.weishu.kernelsu.ui.component.miuix.SearchPager
+import me.weishu.kernelsu.ui.component.miuix.deferredTopPadding
 import me.weishu.kernelsu.ui.theme.LocalEnableBlur
 import me.weishu.kernelsu.ui.theme.isInDarkTheme
 import me.weishu.kernelsu.ui.util.BlurredBar
@@ -351,61 +351,69 @@ fun ModuleRepoScreenMiuix(
         val offline = state.offline
 
         searchStatus.SearchBox {
-            if (!contentReady || isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(
-                            top = innerPadding.calculateTopPadding(),
-                            start = innerPadding.calculateStartPadding(layoutDirection),
-                            end = innerPadding.calculateEndPadding(layoutDirection),
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (offline) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = stringResource(R.string.network_offline),
-                                color = colorScheme.onSurfaceVariantSummary,
-                                fontSize = 16.sp
-                            )
-                            Spacer(Modifier.height(12.dp))
-                            TextButton(
-                                modifier = Modifier
-                                    .padding(horizontal = 24.dp)
-                                    .fillMaxWidth(),
-                                text = stringResource(R.string.network_retry),
-                                onClick = actions.onRefresh,
-                            )
+            val pullToRefreshState = rememberPullToRefreshState()
+            val lazyListState = rememberLazyListState()
+            val refreshTick = remember { mutableStateOf(0) }
+            val latestModules = rememberUpdatedState(state.modules)
+            val latestRefreshing = rememberUpdatedState(state.isRefreshing)
+            ScrollToTopOnChange(
+                lazyListState,
+                state.sortOrder,
+                refreshTick.value,
+                isBusy = { latestRefreshing.value },
+            ) { latestModules.value }
+            val refreshTexts = listOf(
+                stringResource(R.string.refresh_pulling),
+                stringResource(R.string.refresh_release),
+                stringResource(R.string.refresh_refresh),
+                stringResource(R.string.refresh_complete),
+            )
+            PullToRefresh(
+                isRefreshing = state.isRefreshing,
+                pullToRefreshState = pullToRefreshState,
+                onRefresh = {
+                    actions.onRefresh()
+                    refreshTick.value++
+                },
+                refreshTexts = refreshTexts,
+                contentPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding() + 6.dp,
+                    start = innerPadding.calculateStartPadding(layoutDirection),
+                    end = innerPadding.calculateEndPadding(layoutDirection)
+                ),
+            ) {
+                if (!contentReady || isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                top = innerPadding.calculateTopPadding(),
+                                start = innerPadding.calculateStartPadding(layoutDirection),
+                                end = innerPadding.calculateEndPadding(layoutDirection),
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (offline) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(R.string.network_offline),
+                                    color = colorScheme.onSurfaceVariantSummary,
+                                    fontSize = 16.sp
+                                )
+                                Spacer(Modifier.height(12.dp))
+                                TextButton(
+                                    modifier = Modifier
+                                        .padding(horizontal = 24.dp)
+                                        .fillMaxWidth(),
+                                    text = stringResource(R.string.network_retry),
+                                    onClick = actions.onRefresh,
+                                )
+                            }
+                        } else {
+                            InfiniteProgressIndicator()
                         }
-                    } else {
-                        InfiniteProgressIndicator()
                     }
-                }
-            }
-            if (!isLoading && contentReady) {
-                val pullToRefreshState = rememberPullToRefreshState()
-                val lazyListState = rememberLazyListState()
-                LaunchedEffect(state.sortOrder) {
-                    lazyListState.scrollToItem(0)
-                }
-                val refreshTexts = listOf(
-                    stringResource(R.string.refresh_pulling),
-                    stringResource(R.string.refresh_release),
-                    stringResource(R.string.refresh_refresh),
-                    stringResource(R.string.refresh_complete),
-                )
-                PullToRefresh(
-                    isRefreshing = state.isRefreshing,
-                    pullToRefreshState = pullToRefreshState,
-                    onRefresh = actions.onRefresh,
-                    refreshTexts = refreshTexts,
-                    contentPadding = PaddingValues(
-                        top = innerPadding.calculateTopPadding() + 6.dp,
-                        start = innerPadding.calculateStartPadding(layoutDirection),
-                        end = innerPadding.calculateEndPadding(layoutDirection)
-                    ),
-                ) {
+                } else {
                     Box(modifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier) {
                         LazyColumn(
                             state = lazyListState,
@@ -1040,12 +1048,10 @@ fun ModuleRepoDetailScreenMiuix(
         stringResource(R.string.tab_readme), stringResource(R.string.tab_releases), stringResource(R.string.tab_info)
     )
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { tabs.size })
-    val tabRowHeight by remember { mutableStateOf(40.dp) }
-    var collapsedFraction by remember { mutableFloatStateOf(scrollBehavior.state.collapsedFraction) }
-    LaunchedEffect(scrollBehavior.state.collapsedFraction) {
-        snapshotFlow { scrollBehavior.state.collapsedFraction }.collectLatest { collapsedFraction = it }
+    val tabRowHeight = 40.dp
+    val dynamicTopPadding = remember(scrollBehavior) {
+        { 12.dp * (1f - scrollBehavior.state.collapsedFraction) }
     }
-    val dynamicTopPadding by remember { derivedStateOf { 12.dp * (1f - collapsedFraction) } }
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
@@ -1076,7 +1082,8 @@ fun ModuleRepoDetailScreenMiuix(
                     Column(
                         modifier = Modifier
                             .padding(horizontal = 12.dp)
-                            .padding(top = dynamicTopPadding, bottom = 6.dp)
+                            .padding(bottom = 6.dp)
+                            .deferredTopPadding(dynamicTopPadding)
                     ) {
                         TabRow(
                             tabs = tabs,
