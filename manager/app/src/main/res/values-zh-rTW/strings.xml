@@ -4,7 +4,7 @@
     <string name="home_not_installed">尚未安裝</string>
     <string name="home_click_to_install">點選開始安裝</string>
     <string name="home_working">已開始運作</string>
-    <string name="home_working_version">版本：%d</string>
+    <string name="home_working_version">版本：%s</string>
     <string name="home_unsupported">未受支援</string>
     <string name="home_unsupported_reason">KernelSU 目前僅支援 GKI 核心</string>
     <string name="home_device_model">裝置型號</string>
@@ -166,4 +166,7 @@
     <string name="sort_by_install_time">安裝時間</string>
     <string name="sort_by_update_time">更新時間</string>
     <string name="sort_reverse">倒序</string>
+    <string name="profile_flags_desc_no_new_privs">防止在此 Root Profile 的上下文中透過 KernelSU 進一步提升權限</string>
+    <string name="install_force_backup">備份為原廠映像</string>
+    <string name="install_force_backup_summary">請確保你選擇的 boot 映像是原廠映像</string>
 </resources>

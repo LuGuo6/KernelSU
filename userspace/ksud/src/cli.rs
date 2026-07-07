@@ -8,12 +8,13 @@ use log::{LevelFilter, error, info};
 use crate::boot_patch::{BootPatchArgs, BootRestoreArgs};
 use crate::module::regenerate_preinit_rc;
 use crate::{
-    apk_sign, assets, debug, defs, init_event, ksucalls, module, module_config, sulog, utils,
+    apk_sign, assets, debug, defs, init_event, ksu_uapi, ksucalls, module, module_config, sulog,
+    utils,
 };
 
 /// KernelSU userspace cli
 #[derive(Parser, Debug)]
-#[command(author, version = defs::VERSION_NAME, about, long_about = None)]
+#[command(author, version = defs::FULL_VERSION, about, long_about = None)]
 struct Args {
     #[command(subcommand)]
     command: Commands,
@@ -59,7 +60,7 @@ enum Commands {
         kmi: Option<String>,
 
         /// manager package name
-        #[arg(long, default_value_t = String::from("me.weishu.kernelsu"))]
+        #[arg(long, default_value_t = String::from(defs::DEFAULT_PACKAGE_NAME))]
         package_name: String,
     },
 
@@ -79,6 +80,9 @@ enum Commands {
     Install {
         #[arg(long, default_value = None)]
         libadbroot: Option<PathBuf>,
+
+        #[arg(long, default_value = None)]
+        data_path: Option<PathBuf>,
     },
 
     /// Unload KernelSU kernel module (LKM Only)
@@ -86,7 +90,7 @@ enum Commands {
 
     /// Uninstall KernelSU modules and itself(LKM Only)
     Uninstall {
-        #[arg(long, default_value_t = String::from("me.weishu.kernelsu"))]
+        #[arg(long, default_value_t = String::from(defs::DEFAULT_PACKAGE_NAME))]
         package_name: String,
     },
 
@@ -175,7 +179,7 @@ enum Debug {
     /// Set the manager app, kernel CONFIG_KSU_DEBUG should be enabled.
     SetManager {
         /// manager package name
-        #[arg(default_value_t = String::from("me.weishu.kernelsu"))]
+        #[arg(default_value_t = String::from(defs::DEFAULT_PACKAGE_NAME))]
         apk: String,
     },
 
@@ -214,6 +218,12 @@ enum Debug {
 
     /// Launch sulogd daemon manually
     Sulogd,
+
+    /// Get kernel info
+    Info,
+
+    /// Print default package name
+    Package,
 }
 
 #[derive(clap::Subcommand, Debug)]
@@ -608,7 +618,10 @@ pub fn run() -> Result<()> {
                 }
             }
         }
-        Commands::Install { libadbroot } => utils::install(libadbroot),
+        Commands::Install {
+            libadbroot,
+            data_path,
+        } => utils::install(libadbroot, data_path),
         Commands::Unload => crate::unload::unload(),
         Commands::Uninstall { package_name } => utils::uninstall(&package_name),
         Commands::Sepolicy { command } => match command {
@@ -700,6 +713,25 @@ pub fn run() -> Result<()> {
                 MarkCommand::Refresh => debug::mark_refresh(),
             },
             Debug::Sulogd => sulog::ensure_sulogd_running(),
+            Debug::Info => {
+                let info = ksucalls::get_info();
+                println!("version: {}", info.version);
+                println!("flags: 0x{:x}", info.flags);
+                println!("uapi_version: {}", info.uapi_version);
+                println!("features: 0x{:x}", info.features);
+                println!("lkm: {}", ksucalls::is_lkm());
+                println!("late_load: {}", ksucalls::is_late_load());
+                println!("runtime_mode: {}", ksucalls::runtime_mode());
+                println!(
+                    "pr_build: {}",
+                    (info.flags & ksu_uapi::KSU_GET_INFO_FLAG_PR_BUILD) != 0
+                );
+                Ok(())
+            }
+            Debug::Package => {
+                println!("{}", defs::DEFAULT_PACKAGE_NAME);
+                Ok(())
+            }
         },
 
         Commands::BootPatch(boot_patch) => crate::boot_patch::patch(boot_patch),

@@ -114,6 +114,9 @@ fun HomePagerMiuix(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        if (state.checkUpdateEnabled) {
+                            UpdateCard(state = state, actions = actions)
+                        }
                         if (state.showManagerPrBuildWarning) {
                             WarningCard(stringResource(id = R.string.home_pr_build_warning))
                         } else if (state.showKernelPrBuildWarning) {
@@ -131,13 +134,33 @@ fun HomePagerMiuix(
                         if (state.showGkiWarning) {
                             WarningCard(stringResource(id = R.string.home_gki_warning))
                         }
-                        if (state.showRequireKernelWarning) {
+                        if (state.showUAPIMisMatchWarning) {
                             WarningCard(
                                 stringResource(
-                                    id = R.string.require_kernel_version,
-                                    state.ksuVersion ?: 0, me.weishu.kernelsu.Natives.MINIMAL_SUPPORTED_KERNEL
-                                ),
+                                    id = R.string.uapi_mismatch,
+                                    state.managerUAPIVersion,
+                                    state.kernelUAPIVersion ?: 0,
+                                )
                             )
+                        }
+                        if (state.showRequireKernelWarning) {
+                            if (state.currentManagerVersionCode < (state.ksuVersion ?: 0)) {
+                                WarningCard(
+                                    stringResource(
+                                        id = R.string.require_manager_version,
+                                        state.currentManagerVersionCode,
+                                        state.ksuVersion ?: 0,
+                                    )
+                                )
+                            } else {
+                                WarningCard(
+                                    stringResource(
+                                        id = R.string.require_kernel_version,
+                                        state.ksuVersion ?: 0,
+                                        me.weishu.kernelsu.Natives.MINIMAL_SUPPORTED_KERNEL
+                                    )
+                                )
+                            }
                         }
                         if (state.showRootWarning) {
                             WarningCard(stringResource(id = R.string.grant_root_failed))
@@ -146,9 +169,6 @@ fun HomePagerMiuix(
                             state = state,
                             actions = actions,
                         )
-                        if (state.checkUpdateEnabled) {
-                            UpdateCard(state = state, actions = actions)
-                        }
                         InfoCard(systemInfo = state.systemInfo)
                         DonateCard(onOpenUrl = actions.onOpenUrl)
                         LearnMoreCard(onOpenUrl = actions.onOpenUrl)
@@ -293,7 +313,7 @@ private fun StatusCard(
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     modifier = Modifier.fillMaxWidth(),
-                                    text = stringResource(R.string.home_working_version, state.ksuVersion),
+                                    text = stringResource(R.string.home_working_version, "${state.ksuVersion}-${state.kernelUAPIVersion}"),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                 )
@@ -656,4 +676,7 @@ private fun previewHomeScreenState(
     superuserCount = superuserCount,
     moduleCount = moduleCount,
     systemInfo = previewSystemInfo.copy(selinuxStatus = selinuxStatus),
+    kernelUAPIVersion = 1,
+    managerUAPIVersion = 1,
+    uapiMismatch = false,
 )
