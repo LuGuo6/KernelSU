@@ -6,10 +6,14 @@ $(info -- KDIR: $(KDIR))
 $(info -- MDIR: $(MDIR))
 $(info -- OUTPUT DIR: $(ODIR))
 
-.PHONY: all compdb clean format check-format
+.PHONY: all modules compdb clean format check-format
 
 all: check_symbol
 	make -C $(KDIR) M=$(ODIR) src=$(MDIR) modules compile_commands.json -j$(shell nproc)
+	./check_symbol $(ODIR)/kernelsu.ko $(KDIR)/vmlinux
+
+modules: check_symbol
+	make -C $(KDIR) M=$(ODIR) src=$(MDIR) modules -j$(shell nproc)
 	./check_symbol $(ODIR)/kernelsu.ko $(KDIR)/vmlinux
 
 compdb:
