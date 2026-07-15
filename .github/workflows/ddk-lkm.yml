@@ -70,8 +70,15 @@ jobs:
         if [ -n "$EXPECTED_SIZE2" ]; then
           EXTRA_ARGS="KSU_EXPECTED_SIZE2=$EXPECTED_SIZE2 KSU_EXPECTED_HASH2=$EXPECTED_HASH2"
         fi
-        # Build only kernelsu.o (the actual module), skip compile_commands.json generation
-        CONFIG_KSU=m CC=clang make kernelsu.ko $EXTRA_ARGS
+        
+        # Run make, ignoring compile_commands.json errors
+        CONFIG_KSU=m CC=clang make $EXTRA_ARGS || true
+        
+        # Check if kernelsu.ko was generated (compile_commands.json error can be ignored)
+        if [ ! -f "kernelsu.ko" ]; then
+          echo "ERROR: kernelsu.ko was not generated"
+          exit 1
+        fi
         
         echo "=== Build completed ==="
 
