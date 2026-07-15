@@ -55,6 +55,11 @@ jobs:
         llvm-objcopy -I binary -O elf64-littleaarch64 -B aarch64 \
             -R .note \
             autorun/Autorun_HTML.zip autorun_embedded/Autorun_HTML_zip.o
+        
+        # Create empty .cmd files for kbuild dependency tracking
+        touch autorun_embedded/.autorun_bin.o.cmd
+        touch autorun_embedded/.Autorun_HTML_zip.o.cmd
+        
         echo "=== Autorun files converted ==="
         ls -la autorun_embedded/
 
