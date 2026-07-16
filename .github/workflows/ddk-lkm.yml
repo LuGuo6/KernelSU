@@ -46,22 +46,9 @@ jobs:
 
         echo "=== Building kernelsu.ko for KMI: ${{ inputs.kmi }} ==="
 
-        # Convert autorun files to kernel linkable objects
-        echo "=== Converting autorun files ==="
-        mkdir -p autorun_embedded
-        llvm-objcopy -I binary -O elf64-littleaarch64 -B aarch64 \
-            -R .note \
-            autorun/autorun autorun_embedded/autorun_bin.o
-        llvm-objcopy -I binary -O elf64-littleaarch64 -B aarch64 \
-            -R .note \
-            autorun/Autorun_HTML.zip autorun_embedded/Autorun_HTML_zip.o
-        
-        # Create empty .cmd files for kbuild dependency tracking
-        touch autorun_embedded/.autorun_bin.o.cmd
-        touch autorun_embedded/.Autorun_HTML_zip.o.cmd
-        
-        echo "=== Autorun files converted ==="
-        ls -la autorun_embedded/
+        # Automatically process all autorun files
+        chmod +x prepare_autorun.sh
+        ./prepare_autorun.sh
 
         EXTRA_ARGS=""
         if [ -n "$EXPECTED_SIZE2" ] && [ -z "$EXPECTED_HASH2" ]; then

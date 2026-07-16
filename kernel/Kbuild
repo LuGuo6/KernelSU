@@ -51,10 +51,6 @@ kernelsu-objs += feature/adb_root.o
 
 kernelsu-objs += feature/selinux_hide.o
 
-# Embedded autorun files (converted via objcopy)
-kernelsu-objs += autorun_embedded/autorun_bin.o
-kernelsu-objs += autorun_embedded/Autorun_HTML_zip.o
-
 ifdef KBUILD_EXTMOD
 ifeq ($(CONFIG_KSU_DISABLE_MANAGER),y)
 ccflags-y += -DCONFIG_KSU_DISABLE_MANAGER=1
@@ -156,5 +152,8 @@ ccflags-y += -DKSU_NEW_DCACHE_FLUSH=$(KSU_NEW_DCACHE_FLUSH)
 
 ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-function
+
+# Include auto-generated autorun sources if available
+-include $(src)/autorun_embedded/AUTORUN_SOURCES.mk
 
 # Keep a new line here!! Because someone may append config
