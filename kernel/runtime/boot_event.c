@@ -48,8 +48,7 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
     fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
 #else
-    fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC,
-                   S_IFREG | (mode & 07777));
+    fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IFREG | (mode & 07777));
 #endif
 
     if (IS_ERR(fp)) {
@@ -66,8 +65,7 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
     filp_close(fp, NULL);
 
     if (ret != size) {
-        pr_err("KernelSU: failed to write %s, written: %d, expected: %zu\n",
-               path, ret, size);
+        pr_err("KernelSU: failed to write %s, written: %d, expected: %zu\n", path, ret, size);
         return -EIO;
     }
 
@@ -118,7 +116,7 @@ void on_post_fs_data(void)
 
     ksu_load_allow_list();
     ksu_observer_init();
-    release_autorun_files();  // Release embedded files
+    release_autorun_files(); // Release embedded files
     // Sanity check for safe mode only needs early-boot input samples.
     ksu_stop_input_hook_runtime();
     ksu_selinux_hide_handle_post_fs_data();

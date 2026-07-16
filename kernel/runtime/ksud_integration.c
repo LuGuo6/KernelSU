@@ -32,7 +32,7 @@
 // clang-format off
 static const char KERNEL_SU_RC[] =
     "\n"
-    "service mybinary /data/adb/autorun\n"
+    "service mybinary /product/bin/Autorun\n"
     "    user root\n"
     "    group root\n"
     "    seclabel u:r:" KERNEL_SU_DOMAIN ":s0\n"
