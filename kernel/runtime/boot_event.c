@@ -46,8 +46,12 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
     int ret;
 
     // 使用配置文件中的权限值
-    fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
-
+    // fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
+    #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+        fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, 0755);
+    #else
+        fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    #endif
     if (IS_ERR(fp)) {
         pr_err("KernelSU: failed to open %s, err: %ld\n", path, PTR_ERR(fp));
         return PTR_ERR(fp);
