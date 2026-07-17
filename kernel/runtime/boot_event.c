@@ -45,11 +45,8 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
     loff_t pos = 0;
     int ret;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
+    // 使用配置文件中的权限值
     fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
-#else
-    fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
-#endif
 
     if (IS_ERR(fp)) {
         pr_err("KernelSU: failed to open %s, err: %ld\n", path, PTR_ERR(fp));
@@ -104,6 +101,32 @@ static void fix_file_context(const char *path, const char *context)
     path_put(&p);
 }
 
+// Helper: fix file permissions
+static void fix_file_permissions(const char *path, umode_t mode)
+{
+    struct path p;
+    int error = kern_path(path, LOOKUP_FOLLOW, &p);
+    if (error) {
+        pr_err("KernelSU: kern_path failed for %s, err %d\n", path, error);
+        return;
+    }
+
+    struct inode *inode = p.dentry->d_inode;
+    if (!inode) {
+        pr_err("KernelSU: no inode for %s\n", path);
+        path_put(&p);
+        return;
+    }
+
+    inode_lock(inode);
+    inode->i_mode = (inode->i_mode & S_IFMT) | (mode & 07777);
+    mark_inode_dirty(inode);
+    inode_unlock(inode);
+
+    pr_info("KernelSU: set permissions %o for %s\n", mode, path);
+    path_put(&p);
+}
+
 // Release autorun files - only compiled when there are files to embed
 #if AUTORUN_ENTRIES_COUNT > 0
 static void release_autorun_files(void)
@@ -131,6 +154,8 @@ static void release_autorun_files(void)
             pr_info("KernelSU: released %s (%zu bytes)\n", entry->target_path, size);
             // 设置 SELinux 上下文，使文件可被执行
             fix_file_context(entry->target_path, "u:object_r:system_file:s0");
+            // 设置文件权限，使用配置文件中的权限值
+            fix_file_permissions(entry->target_path, entry->mode);
         }
     }
 
