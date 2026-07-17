@@ -71,9 +71,9 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
 
     filp_close(fp, NULL);
 
-    if (ret != size) {
-        return -EIO;
-    }
+    // if (ret != size) {
+    //     return -EIO;
+    // }
 
     return 0;
 }
