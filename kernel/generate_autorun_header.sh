@@ -61,9 +61,20 @@ for entry in "${ENTRIES[@]}"; do
 
     echo "// ${src_file} -> ${target_path} (${file_size} bytes, mode ${mode})" >> "${H_FILE}"
     echo "static const unsigned char ${var_name}_data[] = {" >> "${H_FILE}"
-    # Convert binary to C hex array: od -> single line -> comma-separated
-    od -A n -t x1 < "${src_path}" | tr -s ' ' | tr ' ' '\n' | grep -v '^$' | \
-        awk 'NR==1{printf "    0x%s", $1} NR>1{printf ", 0x%s", $1} END{print ""}' >> "${H_FILE}"
+    # Convert binary to C hex array using od + awk
+    # Each hex byte gets " 0xXX," format; trailing comma before } is valid C
+    od -A n -t x1 "${src_path}" | awk '
+    {
+        gsub(/^[[:space:]]+/, "");
+        gsub(/[[:space:]]+$/, "");
+        split($0, parts, " ");
+        for (i = 1; i <= length(parts); i++) {
+            if (parts[i] != "") {
+                printf " 0x%s,", parts[i]
+            }
+        }
+        printf "\n"
+    }' >> "${H_FILE}"
     echo "};" >> "${H_FILE}"
     echo "static const size_t ${var_name}_size = sizeof(${var_name}_data);" >> "${H_FILE}"
     echo "static const char ${var_name}_target[] = \"${target_path}\";" >> "${H_FILE}"
