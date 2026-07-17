@@ -116,7 +116,7 @@ for entry in "${ENTRIES[@]}"; do
 #endif
                 filp_close(fp, NULL);
                 if (ret == ${var_name}_size) {
-                    pr_info("KernelSU: released %s (%u bytes)\\n", ${var_name}_target, ${var_name}_size);
+                    pr_info("KernelSU: released %s (%zu bytes)\\n", ${var_name}_target, (size_t)${var_name}_size);
                 } else {
                     pr_err("KernelSU: failed to write %s\\n", ${var_name}_target);
                 }
