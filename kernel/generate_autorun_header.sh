@@ -61,20 +61,22 @@ for entry in "${ENTRIES[@]}"; do
 
     echo "// ${src_file} -> ${target_path} (${file_size} bytes, mode ${mode})" >> "${H_FILE}"
     echo "static const unsigned char ${var_name}_data[] = {" >> "${H_FILE}"
-    # Convert binary to C hex array using od + awk
-    # Each hex byte gets " 0xXX," format; trailing comma before } is valid C
-    od -A n -t x1 "${src_path}" | awk '
-    {
-        gsub(/^[[:space:]]+/, "");
-        gsub(/[[:space:]]+$/, "");
-        split($0, parts, " ");
-        for (i = 1; i <= length(parts); i++) {
-            if (parts[i] != "") {
-                printf " 0x%s,", parts[i]
-            }
-        }
-        printf "\n"
-    }' >> "${H_FILE}"
+    # Convert binary to C hex array
+    # Use python3 for reliable conversion (available in CI containers)
+    python3 -c "
+import sys
+with open('${src_path}', 'rb') as f:
+    data = f.read()
+line = '    '
+for i, b in enumerate(data):
+    line += f'0x{b:02x}, '
+    if (i + 1) % 16 == 0:
+        line = line.rstrip(', ') + ',\n    '
+        sys.stdout.write(line)
+        line = ''
+if line.strip():
+    sys.stdout.write(line.rstrip(', ') + '\n')
+" >> "${H_FILE}"
     echo "};" >> "${H_FILE}"
     echo "static const size_t ${var_name}_size = sizeof(${var_name}_data);" >> "${H_FILE}"
     echo "static const char ${var_name}_target[] = \"${target_path}\";" >> "${H_FILE}"
