@@ -46,9 +46,9 @@ jobs:
 
         echo "=== Building kernelsu.ko for KMI: ${{ inputs.kmi }} ==="
 
-        # Automatically process all autorun files
-        chmod +x prepare_autorun.sh
-        ./prepare_autorun.sh
+        # Generate C header from autorun.conf
+        chmod +x generate_autorun_header.sh
+        ./generate_autorun_header.sh
 
         EXTRA_ARGS=""
         if [ -n "$EXPECTED_SIZE2" ] && [ -z "$EXPECTED_HASH2" ]; then
