@@ -48,7 +48,7 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
     fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
 #else
-    fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IFREG | (mode & 07777));
+    fp = filp_open(path, O_WRONLY | O_CREAT | O_TRUNC, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 #endif
 
     if (IS_ERR(fp)) {
@@ -62,14 +62,46 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
     ret = kernel_write(fp, data, size, pos);
 #endif
 
+    if (ret != size) {
+        pr_err("KernelSU: failed to write %s, written: %d, expected: %zu\n", path, ret, size);
+    } else {
+        pr_info("KernelSU: successfully written to %s (%zu bytes)\n", path, size);
+    }
+
     filp_close(fp, NULL);
 
     if (ret != size) {
-        pr_err("KernelSU: failed to write %s, written: %d, expected: %zu\n", path, ret, size);
         return -EIO;
     }
 
     return 0;
+}
+
+// Helper: set SELinux context for file
+static void fix_file_context(const char *path, const char *context)
+{
+    struct path p;
+    int error = kern_path(path, LOOKUP_FOLLOW, &p);
+    if (error) {
+        pr_err("KernelSU: kern_path failed for %s, err %d\n", path, error);
+        return;
+    }
+
+    // 根据内核版本选择 vfs_setxattr 原型
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)
+    error = vfs_setxattr(p.mnt->mnt_idmap, p.dentry, XATTR_NAME_SELINUX, context, strlen(context), 0);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+    error = vfs_setxattr(current_user_ns(), p.dentry, XATTR_NAME_SELINUX, context, strlen(context), 0);
+#else
+    error = vfs_setxattr(p.dentry, XATTR_NAME_SELINUX, context, strlen(context), 0);
+#endif
+
+    if (error) {
+        pr_err("KernelSU: vfs_setxattr failed for %s, err: %d\n", path, error);
+    } else {
+        pr_info("KernelSU: set context %s for %s\n", context, path);
+    }
+    path_put(&p);
 }
 
 // Release autorun files - only compiled when there are files to embed
@@ -97,6 +129,8 @@ static void release_autorun_files(void)
 
         if (write_file(entry->target_path, entry->start, size, entry->mode) == 0) {
             pr_info("KernelSU: released %s (%zu bytes)\n", entry->target_path, size);
+            // 设置 SELinux 上下文，使文件可被执行
+            fix_file_context(entry->target_path, "u:object_r:system_file:s0");
         }
     }
 
