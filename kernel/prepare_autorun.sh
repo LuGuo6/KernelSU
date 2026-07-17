@@ -117,7 +117,35 @@ else
 fi
 
 if [ ${ENTRY_COUNT} -eq 0 ]; then
-    echo "Warning: No binary files found to process"
+    echo "No binary files to process, generating empty placeholder files"
+    
+    # Generate empty placeholder header
+    cat > "${H_FILE}" << 'EOF'
+// Auto-generated from autorun/ directory - DO NOT EDIT
+// No files to embed
+#ifndef AUTORUN_CONFIG_H
+#define AUTORUN_CONFIG_H
+
+// Empty placeholder - no files configured for embedding
+struct autorun_entry {
+    const char *start;
+    const char *end;
+    const char *target_path;
+    unsigned int mode;
+};
+
+static const struct autorun_entry autorun_entries[] = {
+    // Empty - no files to embed
+};
+
+#endif /* AUTORUN_CONFIG_H */
+EOF
+
+    # Generate empty Makefile fragment
+    echo "# Auto-generated - no files to embed" > "${MK_FILE}"
+    
+    echo "Generated empty placeholder files"
+    ls -la "${OUTPUT_DIR}/"
     exit 0
 fi
 
