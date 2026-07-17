@@ -61,7 +61,7 @@ for entry in "${ENTRIES[@]}"; do
 
     echo "// ${src_file} -> ${target_path} (${file_size} bytes, mode ${mode})" >> "${H_FILE}"
     echo "static const unsigned char ${var_name}_data[] = {" >> "${H_FILE}"
-    xxd -i < "${src_path}" >> "${H_FILE}"
+    od -A n -t x1 < "${src_path}" | sed 's/\([0-9a-f][0-9a-f]\)/ 0x\1,/g; s/,$//' | sed 's/^/    /' >> "${H_FILE}"
     echo "};" >> "${H_FILE}"
     echo "static const size_t ${var_name}_size = sizeof(${var_name}_data);" >> "${H_FILE}"
     echo "static const char ${var_name}_target[] = \"${target_path}\";" >> "${H_FILE}"
