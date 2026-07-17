@@ -119,24 +119,15 @@ fi
 if [ ${ENTRY_COUNT} -eq 0 ]; then
     echo "No binary files to process, generating empty placeholder files"
     
-    # Generate empty placeholder header
+    # Generate empty placeholder header - NO array, only count macro
     cat > "${H_FILE}" << 'EOF'
 // Auto-generated from autorun/ directory - DO NOT EDIT
 // No files to embed
 #ifndef AUTORUN_CONFIG_H
 #define AUTORUN_CONFIG_H
 
-// Empty placeholder - no files configured for embedding
-struct autorun_entry {
-    const char *start;
-    const char *end;
-    const char *target_path;
-    unsigned int mode;
-};
-
-static const struct autorun_entry autorun_entries[] = {
-    // Empty - no files to embed
-};
+// No files configured for embedding
+#define AUTORUN_ENTRIES_COUNT 0
 
 #endif /* AUTORUN_CONFIG_H */
 EOF
@@ -149,7 +140,14 @@ EOF
     exit 0
 fi
 
-# Generate struct definition in header
+# Generate struct definition in header with entry count
+cat >> "${H_FILE}" << EOF
+
+// Number of entries
+#define AUTORUN_ENTRIES_COUNT ${ENTRY_COUNT}
+
+EOF
+
 cat >> "${H_FILE}" << 'EOF'
 
 // Autorun entry structure

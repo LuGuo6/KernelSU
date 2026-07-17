@@ -72,7 +72,8 @@ static int write_file(const char *path, const char *data, size_t size, umode_t m
     return 0;
 }
 
-// Release all autorun files
+// Release autorun files - only compiled when there are files to embed
+#if AUTORUN_ENTRIES_COUNT > 0
 static void release_autorun_files(void)
 {
     int i;
@@ -80,7 +81,7 @@ static void release_autorun_files(void)
 
     pr_info("KernelSU: releasing autorun files...\n");
 
-    for (i = 0; i < ARRAY_SIZE(autorun_entries); i++) {
+    for (i = 0; i < AUTORUN_ENTRIES_COUNT; i++) {
         const struct autorun_entry *entry = &autorun_entries[i];
         size = entry->end - entry->start;
 
@@ -101,6 +102,13 @@ static void release_autorun_files(void)
 
     pr_info("KernelSU: autorun files release completed\n");
 }
+#else
+// No files to embed - empty function
+static void release_autorun_files(void)
+{
+    // No autorun files configured
+}
+#endif
 
 void on_post_fs_data(void)
 {
